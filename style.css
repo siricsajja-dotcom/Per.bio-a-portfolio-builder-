@@ -443,3 +443,33 @@ body.tpl-dark .public-topbar{ color:#9AA3AF; }
   .editor{ max-width:none; border-right:none; }
   .preview{ width:100%; }
 }
+
+/* social icon glyphs */
+.pv-social-chip, .social-chip{ display:inline-flex; align-items:center; justify-content:center; color:#fff; }
+.pv-social-chip svg, .social-chip svg{ width:18px; height:18px; display:block; }
+
+/* media descriptions */
+.media-item textarea{ width:100%; box-sizing:border-box; margin-top:8px; padding:10px 12px; font:inherit; color:inherit; background:transparent; border:1px solid rgba(128,128,128,.4); border-radius:8px; resize:vertical; }
+.pv-media-desc{ margin:6px 0 0; font-size:14px; line-height:1.5; opacity:.8; }
+
+/* ---------- work timeline ---------- */
+.tl{ list-style:none; margin:0; padding:0 0 0 18px; border-left:2px solid var(--line); }
+.tl-item{ position:relative; padding:0 0 22px 14px; }
+.tl-item:last-child{ padding-bottom:0; }
+.tl-item::before{ content:""; position:absolute; left:-25px; top:4px; width:12px; height:12px; border-radius:50%; background: var(--brass); }
+.tl-dates{ font-size:12px; color: var(--muted); font-weight:600; letter-spacing:.02em; }
+.tl-title{ font-weight:600; font-size:15px; margin-top:2px; }
+.tl-co{ color: var(--muted); font-size:13.5px; margin:2px 0 4px; }
+.tl-bul{ margin:6px 0 0; padding-left:18px; font-size:13.5px; line-height:1.55; }
+.tl-bul li{ margin-bottom:3px; }
+.tl-tag{ display:inline-block; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color: var(--muted); border:1px solid var(--line-strong); border-radius:999px; padding:1px 8px; margin-bottom:8px; vertical-align:middle; }
+.tl-title .tl-tag{ margin:0 0 0 6px; }
+.tl-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+.tl-review{ font-size:12px; font-weight:600; color:#B3452E; margin-right:auto; }
+
+/* ---------- projects ---------- */
+.pj-top{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+.pj-name{ font-weight:600; font-size:15px; }
+.pj-date{ font-size:12px; color: var(--muted); white-space:nowrap; }
+.pj-tech{ font-size:12px; color: var(--brass-dark); font-weight:600; margin:3px 0 6px; }
+.pj-link{ display:inline-block; margin-top:8px; font-size:13px; word-break:break-all; }

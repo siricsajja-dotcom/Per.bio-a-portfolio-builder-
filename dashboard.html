@@ -25,11 +25,13 @@
   <div class="dash-body">
     <nav class="tab-rail">
       <button data-tab="profile" class="active">Profile</button>
+      <button data-tab="about">About Me</button>
       <button data-tab="design">Design</button>
       <button data-tab="socials">Socials</button>
       <button data-tab="media">Media</button>
       <button data-tab="resume">Resume / CV</button>
-      <button data-tab="about">About Me</button>
+      <button data-tab="timeline">Work Timeline</button>
+      <button data-tab="projects">Projects</button>
       <button data-tab="contact">Contact Info</button>
       <button data-tab="booking">Booking</button>
     </nav>
@@ -73,7 +75,7 @@
 
       <section class="panel" data-panel="media">
         <h2>Media</h2>
-        <p class="panel-sub">Link videos, reels, or demos from YouTube, TikTok, or Vimeo.</p>
+        <p class="panel-sub">Link anything you want to show off: videos, published work, projects, or articles. Add a short description to each.</p>
         <div id="mediaList"></div>
         <div class="list-add-row">
           <button type="button" class="btn btn-outline btn-sm" id="addMediaBtn">+ Add media</button>
@@ -95,11 +97,37 @@
         </div>
       </section>
 
+      <section class="panel" data-panel="timeline">
+        <h2>Work Timeline</h2>
+        <p class="panel-sub">Upload your resume and your work experience is turned into a timeline automatically. The file is read in your browser and isn't sent anywhere.</p>
+        <div class="resume-drop" id="tlDrop" role="button" tabindex="0">Click to upload your resume (PDF or DOCX)</div>
+        <input type="file" id="tlInput" accept=".pdf,.docx" class="hidden">
+        <div id="tlSaved"></div>
+        <p class="panel-sub" id="tlMsg" role="status" style="margin:8px 0 18px"></p>
+        <div id="tlList"></div>
+        <div class="list-add-row">
+          <button type="button" class="btn btn-outline btn-sm" id="tlAddBtn">+ Add role</button>
+        </div>
+      </section>
+
       <section class="panel" data-panel="about">
         <h2>About Me</h2>
         <p class="panel-sub">The longer story — background, interests, what you're looking for.</p>
         <div class="field">
           <textarea id="aboutInput" rows="10" placeholder="I'm a senior studying..."></textarea>
+        </div>
+      </section>
+
+      <section class="panel" data-panel="projects">
+        <h2>Projects</h2>
+        <p class="panel-sub">Class, personal, and side projects live here, separate from your work timeline. Upload a resume with a Projects section to fill this in, or add them yourself.</p>
+        <div class="resume-drop" id="pjDrop" role="button" tabindex="0">Click to upload your resume (PDF or DOCX)</div>
+        <input type="file" id="pjInput" accept=".pdf,.docx" class="hidden">
+        <div id="pjSaved"></div>
+        <p class="panel-sub" id="pjMsg" role="status" style="margin:8px 0 18px"></p>
+        <div id="pjList"></div>
+        <div class="list-add-row">
+          <button type="button" class="btn btn-outline btn-sm" id="pjAddBtn">+ Add project</button>
         </div>
       </section>
 
