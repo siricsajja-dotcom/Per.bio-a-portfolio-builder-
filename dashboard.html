@@ -52,7 +52,7 @@
         </div>
         <div class="field">
           <label for="taglineInput">One-line tagline</label>
-          <input id="taglineInput" type="text" placeholder="Junior @ Boston University · Product Design">
+          <input id="taglineInput" type="text" placeholder="Senior @ The College of New Jersey · Product Design">
         </div>
       </section>
 
@@ -82,14 +82,12 @@
 
       <section class="panel" data-panel="resume">
         <h2>Resume / CV</h2>
-        <p class="panel-sub">Upload a file, or link to one hosted elsewhere.</p>
+        <p class="panel-sub">Upload up to 5 files (PDF, DOC, or DOCX), or link to one hosted elsewhere.</p>
 
-        <div class="resume-file hidden" id="resumeFileLabel">
-          <span></span>
-          <button type="button" class="btn-text" id="removeResumeFile">Remove</button>
-        </div>
-        <div class="resume-drop" id="resumeDrop">Click to upload a PDF</div>
-        <input type="file" id="resumeFileInput" accept=".pdf,.doc,.docx" class="hidden">
+        <div id="filesList"></div>
+        <div class="resume-drop" id="filesDrop" role="button" tabindex="0">Click to upload files (<span id="fileCount">0</span> of 5)</div>
+        <input type="file" id="filesInput" accept=".pdf,.doc,.docx" multiple class="hidden">
+        <p class="panel-sub" id="filesMsg" role="status" style="margin-top:8px"></p>
 
         <div class="field">
           <label for="resumeLinkInput">Or paste a link</label>
@@ -101,7 +99,7 @@
         <h2>About Me</h2>
         <p class="panel-sub">The longer story — background, interests, what you're looking for.</p>
         <div class="field">
-          <textarea id="aboutInput" rows="10" placeholder="I'm a junior studying..."></textarea>
+          <textarea id="aboutInput" rows="10" placeholder="I'm a senior studying..."></textarea>
         </div>
       </section>
 
@@ -118,7 +116,7 @@
         </div>
         <div class="field">
           <label for="locationInput">Location</label>
-          <input id="locationInput" type="text" placeholder="Boston, MA">
+          <input id="locationInput" type="text" placeholder="Princeton, NJ">
         </div>
       </section>
 
@@ -193,6 +191,7 @@
 <script src="script.js"></script>
 <script>
   document.getElementById("avatarBtn").addEventListener("click", () => document.getElementById("avatarFile").click());
+
 </script>
 </body>
 </html>

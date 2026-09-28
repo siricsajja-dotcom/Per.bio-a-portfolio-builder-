@@ -20,6 +20,14 @@ const SOCIAL_PLATFORMS = [
 
 const MEDIA_PLATFORMS = ["YouTube", "TikTok", "Vimeo"];
 
+const MAX_FILES = 5;
+
+// supports old single-file saves too
+function getResumeFiles(r) {
+  if (Array.isArray(r.files) && r.files.length) return r.files;
+  return r.fileData ? [{ name: r.fileName || "resume.pdf", data: r.fileData }] : [];
+}
+
 const TEMPLATES = [
   { id: "classic",   name: "Classic",   desc: "Warm paper, centered",            bg: "#F7F5F1", dark: false },
   { id: "midnight",  name: "Midnight",  desc: "Dark and confident",              bg: "#12181F", dark: true  },
@@ -222,7 +230,7 @@ function defaultState() {
       about: "",
       socials: {},
       media: [],
-      resume: { fileName: "", fileData: "", link: "" },
+      resume: { fileName: "", fileData: "", link: "", files: [] },
       contact: { email: "", phone: "", location: "" },
       booking: {
         gmailConnected: false,
@@ -311,13 +319,17 @@ function renderPublicMarkup(state, opts = {}) {
         </div>`).join("")
     : `<p class="pv-empty">No media added yet.</p>`;
 
-  const resumeHtml = (p.resume.fileName || p.resume.link)
+  const resumeFiles = getResumeFiles(p.resume);
+  const resumeHtml = (resumeFiles.length || p.resume.link)
     ? `
-      ${p.resume.fileName ? `<div class="pv-row"><span class="k">File</span><span>${escapeHtml(p.resume.fileName)}</span></div>` : ""}
+      ${resumeFiles.map((f) => `
+        <div class="pv-row">
+          <span>${escapeHtml(f.name)}</span>
+          <a class="btn btn-outline btn-sm" href="${f.data}" download="${escapeHtml(f.name)}">Download</a>
+        </div>`).join("")}
       ${p.resume.link ? `<div class="pv-row"><span class="k">Link</span><a href="${withHttp(p.resume.link)}" target="_blank" rel="noopener">${escapeHtml(p.resume.link)}</a></div>` : ""}
-      ${p.resume.fileData ? `<p style="margin-top:14px;"><a class="btn btn-outline btn-sm" href="${p.resume.fileData}" download="${escapeHtml(p.resume.fileName || "resume.pdf")}">Download resume</a></p>` : ""}
     `
-    : `<p class="pv-empty">No resume uploaded yet.</p>`;
+    : `<p class="pv-empty">No files uploaded yet.</p>`;
 
   const aboutHtml = p.about
     ? `<p style="white-space:pre-wrap;">${escapeHtml(p.about)}</p>`
@@ -660,45 +672,72 @@ function initDashboard() {
     renderMediaList();
   });
 
-  /* ---- Resume panel ---- */
-  const resumeDrop = document.getElementById("resumeDrop");
-  const resumeFileInput = document.getElementById("resumeFileInput");
-  const resumeFileLabel = document.getElementById("resumeFileLabel");
+  /* ---- Resume panel (up to 5 files) ---- */
+  const filesList = document.getElementById("filesList");
+  const filesDrop = document.getElementById("filesDrop");
+  const filesInput = document.getElementById("filesInput");
+  const fileCount = document.getElementById("fileCount");
+  const filesMsg = document.getElementById("filesMsg");
   const resumeLinkInput = document.getElementById("resumeLinkInput");
+  const R = state.profile.resume;
 
-  resumeLinkInput.value = state.profile.resume.link;
-  updateResumeFileLabel();
+  R.files = getResumeFiles(R).slice();   // move any old single file into the list
+  R.fileName = ""; R.fileData = "";
+  resumeLinkInput.value = R.link;
 
-  function updateResumeFileLabel() {
-    resumeFileLabel.classList.toggle("hidden", !state.profile.resume.fileName);
-    if (state.profile.resume.fileName) {
-      resumeFileLabel.querySelector("span").textContent = state.profile.resume.fileName;
-    }
+  function renderFiles() {
+    filesList.innerHTML = "";
+    R.files.forEach((f, i) => {
+      const row = document.createElement("div");
+      row.className = "resume-file";
+      const name = document.createElement("span");
+      name.textContent = f.name;
+      const rm = document.createElement("button");
+      rm.type = "button"; rm.className = "btn-text"; rm.textContent = "Remove";
+      rm.addEventListener("click", () => { R.files.splice(i, 1); filesMsg.textContent = ""; persist(); renderFiles(); });
+      row.append(name, rm);
+      filesList.appendChild(row);
+    });
+    fileCount.textContent = R.files.length;
+    const full = R.files.length >= MAX_FILES;
+    filesDrop.style.opacity = full ? ".5" : "";
+    filesDrop.style.pointerEvents = full ? "none" : "";
+    if (full) filesMsg.textContent = `You've reached the ${MAX_FILES} file limit. Remove one to add another.`;
   }
-  resumeDrop.addEventListener("click", () => resumeFileInput.click());
-  resumeFileInput.addEventListener("change", () => {
-    const file = resumeFileInput.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      state.profile.resume.fileName = file.name;
-      state.profile.resume.fileData = reader.result;
-      updateResumeFileLabel();
-      persist();
-    };
-    reader.readAsDataURL(file);
-  });
-  document.getElementById("removeResumeFile").addEventListener("click", (e) => {
-    e.stopPropagation();
-    state.profile.resume.fileName = "";
-    state.profile.resume.fileData = "";
-    updateResumeFileLabel();
+
+  function readFile(file) {
+    return new Promise((resolve) => {
+      const r = new FileReader();
+      r.onload = () => resolve({ name: file.name, type: file.type, data: r.result });
+      r.onerror = () => resolve(null);
+      r.readAsDataURL(file);
+    });
+  }
+
+  filesInput.addEventListener("change", async () => {
+    const picked = Array.from(filesInput.files);
+    filesInput.value = "";
+    const room = MAX_FILES - R.files.length;
+    const skipped = Math.max(0, picked.length - room);
+    filesMsg.textContent = "";
+    for (const file of picked.slice(0, room)) {
+      const item = await readFile(file);
+      if (!item) { filesMsg.textContent = `Couldn't read ${file.name}.`; continue; }
+      R.files.push(item);
+      try { saveState(state); }
+      catch (e) { R.files.pop(); filesMsg.textContent = `${file.name} is too large to save. Try a smaller file.`; }
+    }
+    if (skipped && !filesMsg.textContent) filesMsg.textContent = `Only ${MAX_FILES} files fit. ${skipped} weren't added.`;
     persist();
+    renderFiles();
   });
-  resumeLinkInput.addEventListener("input", () => {
-    state.profile.resume.link = resumeLinkInput.value;
-    persist();
+
+  filesDrop.addEventListener("click", () => filesInput.click());
+  filesDrop.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); filesInput.click(); }
   });
+  resumeLinkInput.addEventListener("input", () => { R.link = resumeLinkInput.value; persist(); });
+  renderFiles();
 
   /* ---- About panel ---- */
   const aboutInput = document.getElementById("aboutInput");
