@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>per.bio — Edit your page</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="dashboard">
+
+<div class="dashboard">
+  <header class="topbar">
+    <div style="display:flex; align-items:center;">
+      <span class="wordmark">per<span>.</span>bio</span>
+      <span class="handle" id="handleLabel"></span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-text" id="resetBtn" style="color:rgba(247,245,241,.6)">Start over</button>
+      <a class="btn btn-ghost btn-sm" id="publicLink" href="profile.html" target="_blank" rel="noopener">View public page</a>
+    </div>
+  </header>
+
+  <div class="dash-body">
+    <nav class="tab-rail">
+      <button data-tab="profile" class="active">Profile</button>
+      <button data-tab="socials">Socials</button>
+      <button data-tab="media">Media</button>
+      <button data-tab="resume">Resume / CV</button>
+      <button data-tab="about">About Me</button>
+      <button data-tab="contact">Contact Info</button>
+      <button data-tab="booking">Booking</button>
+    </nav>
+
+    <main class="editor">
+
+      <section class="panel active" data-panel="profile">
+        <h2>Profile</h2>
+        <p class="panel-sub">This is the header everyone sees first.</p>
+        <div class="avatar-picker">
+          <div class="avatar-circle" id="avatarCircle" title="Click to change photo"></div>
+          <div>
+            <button type="button" class="btn btn-outline btn-sm" id="avatarBtn">Change photo</button>
+            <input type="file" id="avatarFile" accept="image/*" class="hidden">
+          </div>
+        </div>
+        <div class="field">
+          <label for="nameInput">Full name</label>
+          <input id="nameInput" type="text" placeholder="Jordan Ramirez">
+        </div>
+        <div class="field">
+          <label for="taglineInput">One-line tagline</label>
+          <input id="taglineInput" type="text" placeholder="Junior @ Boston University · Product Design">
+        </div>
+      </section>
+
+      <section class="panel" data-panel="socials">
+        <h2>Socials</h2>
+        <p class="panel-sub">Leave any of these blank to hide them from your page.</p>
+        <div class="social-grid" id="socialGrid"></div>
+      </section>
+
+      <section class="panel" data-panel="media">
+        <h2>Media</h2>
+        <p class="panel-sub">Link videos, reels, or demos from YouTube, TikTok, or Vimeo.</p>
+        <div id="mediaList"></div>
+        <div class="list-add-row">
+          <button type="button" class="btn btn-outline btn-sm" id="addMediaBtn">+ Add media</button>
+        </div>
+      </section>
+
+      <section class="panel" data-panel="resume">
+        <h2>Resume / CV</h2>
+        <p class="panel-sub">Upload a file, or link to one hosted elsewhere.</p>
+
+        <div class="resume-file hidden" id="resumeFileLabel">
+          <span></span>
+          <button type="button" class="btn-text" id="removeResumeFile">Remove</button>
+        </div>
+        <div class="resume-drop" id="resumeDrop">Click to upload a PDF</div>
+        <input type="file" id="resumeFileInput" accept=".pdf,.doc,.docx" class="hidden">
+
+        <div class="field">
+          <label for="resumeLinkInput">Or paste a link</label>
+          <input id="resumeLinkInput" type="text" placeholder="drive.google.com/...">
+        </div>
+      </section>
+
+      <section class="panel" data-panel="about">
+        <h2>About Me</h2>
+        <p class="panel-sub">The longer story — background, interests, what you're looking for.</p>
+        <div class="field">
+          <textarea id="aboutInput" rows="10" placeholder="I'm a junior studying..."></textarea>
+        </div>
+      </section>
+
+      <section class="panel" data-panel="contact">
+        <h2>Contact Info</h2>
+        <p class="panel-sub">How recruiters or admissions officers can reach you.</p>
+        <div class="field">
+          <label for="emailInput">Email</label>
+          <input id="emailInput" type="email" placeholder="you@school.edu">
+        </div>
+        <div class="field">
+          <label for="phoneInput">Phone</label>
+          <input id="phoneInput" type="text" placeholder="(555) 123-4567">
+        </div>
+        <div class="field">
+          <label for="locationInput">Location</label>
+          <input id="locationInput" type="text" placeholder="Boston, MA">
+        </div>
+      </section>
+
+      <section class="panel" data-panel="booking">
+        <h2>Booking</h2>
+        <p class="panel-sub">Connect Gmail so visitors can book real slots on your calendar — no third-party link needed.</p>
+
+        <div id="gmailNotConnected">
+          <div class="gmail-box">
+            <div class="gmail-box-icon">@</div>
+            <div style="flex:1;">
+              <div class="gmail-box-title">Connect your Gmail</div>
+              <div class="gmail-box-sub">Your availability below will show real open slots to visitors, and bookings land on your calendar.</div>
+              <div class="field" style="margin: 12px 0 10px;">
+                <input id="gmailEmailInput" type="email" placeholder="you@gmail.com">
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" id="connectGmailBtn">Connect Gmail</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="gmailConnected" class="hidden">
+          <div class="gmail-connected-badge">
+            <span class="gmail-dot"></span>
+            <span>Connected as <strong id="gmailEmailLabel"></strong></span>
+            <button type="button" class="btn-text" id="disconnectGmailBtn">Disconnect</button>
+          </div>
+
+          <h3 class="sub-h">Days you're available</h3>
+          <div class="day-toggle-row" id="dayToggleRow"></div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="startHourSelect">Available from</label>
+              <select id="startHourSelect"></select>
+            </div>
+            <div class="field">
+              <label for="endHourSelect">Available until</label>
+              <select id="endHourSelect"></select>
+            </div>
+            <div class="field">
+              <label for="slotLengthSelect">Slot length</label>
+              <select id="slotLengthSelect">
+                <option value="15">15 min</option>
+                <option value="30">30 min</option>
+                <option value="60">60 min</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="bookingNoteInput">Note shown above your calendar</label>
+            <input id="bookingNoteInput" type="text" placeholder="Happy to chat about internships or coffee chats.">
+          </div>
+
+          <h3 class="sub-h">Upcoming bookings</h3>
+          <div id="bookingsList"></div>
+        </div>
+      </section>
+
+    </main>
+
+    <aside class="preview">
+      <div class="preview-label">Live preview</div>
+      <div class="preview-frame">
+        <div id="previewPage"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script src="script.js"></script>
+<script>
+  document.getElementById("avatarBtn").addEventListener("click", () => document.getElementById("avatarFile").click());
+</script>
+</body>
+</html>
