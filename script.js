@@ -358,7 +358,7 @@ function renderTimelineGraphHtml(exp, proj) {
   }).join("");
 
   return `<div class="ab-block">
-    <div class="ab-head"><h3 class="ab-h">Experience at a glance</h3>
+    <div class="ab-head"><h3 class="ab-h">At a glance</h3>
       <div class="gx-legend"><span><i class="gx-sw gx-work"></i>Work</span>${hasProj ? `<span><i class="gx-sw gx-proj"></i>Projects</span>` : ""}</div>
     </div>
     <div class="gx" role="img" aria-label="Chart of work experience and projects over time">
@@ -391,31 +391,64 @@ function renderProjectLinksHtml(projects, media) {
   </div>`;
 }
 
+const PJ_ICONS = {
+  web:  '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.500 3 14.500 0 18M12 3c-3 3.500-3 14.500 0 18"/>',
+  app:  '<rect x="7" y="2.500" width="10" height="19" rx="2.500"/><path d="M11 18.500h2"/>',
+  data: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  ai:   '<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',
+  game: '<rect x="2.500" y="7" width="19" height="11" rx="5"/><path d="M8 10.500v4M6 12.500h4M16 11.500h.01M18 13.500h.01"/>',
+  design:'<path d="M12 3a9 9 0 1 0 0 18c1.500 0 2-1 1.500-2.200-.5-1.300.3-2.300 1.700-2.300H18a3 3 0 0 0 3-3c0-5-4-10.500-9-10.500z"/><path d="M7.500 11h.01M10 7.500h.01M14.500 7.500h.01"/>',
+  research:'<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.800 3h10.400a2 2 0 0 0 1.800-3l-5-9V3"/>',
+  code: '<path d="M8 8l-5 4 5 4M16 8l5 4-5 4M14 5l-4 14"/>',
+};
+function pjIcon(p) {
+  const t = [p.name, p.tech, p.description].join(" ").toLowerCase();
+  const k = /\b(ml|machine learning|ai|neural|nlp|model|tensorflow|pytorch)\b/.test(t) ? "ai"
+    : /\b(ios|android|swift|kotlin|flutter|react native|mobile|app)\b/.test(t) ? "app"
+    : /\b(game|unity|unreal)\b/.test(t) ? "game"
+    : /\b(figma|design|ux|ui|brand|poster|illustrat)\b/.test(t) ? "design"
+    : /\b(data|sql|tableau|pandas|dashboard|analy|excel|forecast|model)\b/.test(t) ? "data"
+    : /\b(research|lab|study|thesis|experiment|paper|biolog|chem)\b/.test(t) ? "research"
+    : /\b(html|css|javascript|react|node|website|web|site)\b/.test(t) ? "web" : "code";
+  return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PJ_ICONS[k]}</svg>`;
+}
+const ARROW_UP = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg>';
+
 function renderProjectsHtml(list) {
   const items = (list || []).filter((p) => p.name);
   if (!items.length) return `<p class="pv-empty">No projects added yet.</p>`;
-  return items.map((p) => `
-    <div class="pv-media-card pj">
-      <div class="pj-top"><span class="pj-name">${escapeHtml(p.name)}</span>${p.date ? `<span class="pj-date">${escapeHtml(p.date)}</span>` : ""}</div>
-      ${p.tech ? `<div class="pj-tech">${escapeHtml(p.tech)}</div>` : ""}
-      ${p.description ? `<p class="pv-media-desc">${escapeHtml(p.description)}</p>` : ""}
-      ${p.bullets && p.bullets.length ? `<ul class="tl-bul">${p.bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>` : ""}
-      ${p.link ? `<a class="pj-link" href="${escapeHtml(withHttp(p.link))}" target="_blank" rel="noopener">${escapeHtml(p.link)}</a>` : ""}
-    </div>`).join("");
+  return `<div class="pj-grid">${items.map((p) => {
+    const desc = p.description || (p.bullets && p.bullets[0]) || "";
+    const tech = (p.tech || "").split(/[,;\u00b7|]/).map((x) => x.trim()).filter(Boolean).slice(0, 3);
+    const inner = `<span class="pj-ico">${pjIcon(p)}</span>${p.link ? `<span class="pj-go">${ARROW_UP}</span>` : ""}
+      <span class="pj-name">${escapeHtml(p.name)}</span>
+      ${p.date ? `<span class="pj-date">${escapeHtml(p.date)}</span>` : ""}
+      ${desc ? `<span class="pj-desc">${escapeHtml(desc)}</span>` : ""}
+      ${tech.length ? `<span class="pj-chips">${tech.map((t) => `<i>${escapeHtml(t)}</i>`).join("")}</span>` : ""}`;
+    return p.link
+      ? `<a class="pj-card" href="${escapeHtml(withHttp(p.link))}" target="_blank" rel="noopener">${inner}</a>`
+      : `<div class="pj-card">${inner}</div>`;
+  }).join("")}</div>`;
 }
 
-function renderTimelineHtml(list) {
+function renderTimelineHtml(list, proj) {
   const items = sortedExperience(list || []).filter((e) => e.title || e.company);
   if (!items.length) return `<p class="pv-empty">No experience added yet.</p>`;
-  return `<ol class="tl">${items.map((e) => {
+  const graph = renderTimelineGraphHtml(list, proj || []);
+  return `${graph}<ol class="xp">${items.map((e) => {
     const dur = tlDuration(e);
-    const dates = [e.start, e.end && e.end !== e.start ? e.end : ""].filter(Boolean).join(" – ");
-    const sub = [e.title ? e.company : "", e.location].filter(Boolean).join(" · ");
-    return `<li class="tl-item">
-      <div class="tl-dates">${escapeHtml(dates)}${dur ? ` · ${dur}` : ""}</div>
-      <div class="tl-title">${escapeHtml(e.title || e.company)}${e.tag ? ` <span class="tl-tag">${escapeHtml(e.tag)}</span>` : ""}</div>
-      ${sub ? `<div class="tl-co">${escapeHtml(sub)}</div>` : ""}
-      ${e.bullets && e.bullets.length ? `<ul class="tl-bul">${e.bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>` : ""}
+    const dates = [e.start, e.end && e.end !== e.start ? e.end : ""].filter(Boolean).join(" \u2013 ");
+    const sub = [e.title ? e.company : "", e.location].filter(Boolean).join(" \u00b7 ");
+    const bl = (e.bullets || []).filter(Boolean);
+    const more = bl.slice(2);
+    return `<li class="xp-item">
+      <div class="xp-when">${escapeHtml(dates)}${dur ? `<small>${dur}</small>` : ""}</div>
+      <div class="xp-main">
+        <div class="xp-title">${escapeHtml(e.title || e.company)}${e.tag ? ` <span class="tl-tag">${escapeHtml(e.tag)}</span>` : ""}</div>
+        ${sub ? `<div class="xp-co">${escapeHtml(sub)}</div>` : ""}
+        ${bl.length ? `<ul class="xp-bul">${bl.slice(0, 2).map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>` : ""}
+        ${more.length ? `<details class="xp-more"><summary>+${more.length} more</summary><ul class="xp-bul">${more.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul></details>` : ""}
+      </div>
     </li>`;
   }).join("")}</ol>`;
 }
@@ -447,14 +480,48 @@ function getResumeFiles(r) {
 }
 
 const TEMPLATES = [
-  { id: "classic",   name: "Classic",   desc: "Warm paper, centered",            bg: "#F7F5F1", dark: false },
-  { id: "midnight",  name: "Midnight",  desc: "Dark and confident",              bg: "#12181F", dark: true  },
-  { id: "editorial", name: "Editorial", desc: "Left-aligned, big serif name",    bg: "#FFFFFF", dark: false },
-  { id: "banner",    name: "Banner",    desc: "Color header behind your photo",  bg: "#F7F5F1", dark: false },
-  { id: "split",     name: "Split",     desc: "Profile left, content right",     bg: "#F7F5F1", dark: false },
+  { id: "classic",  name: "Classic",  desc: "Warm paper, bold color header", bg: "#F7F5F1", dark: false, accent: "#C99A3B", h: "fill", tf: "#1B2430" },
+  { id: "midnight", name: "Midnight", desc: "Dark page, bold color header",  bg: "#12181F", dark: true,  accent: "#C99A3B", h: "fill", tf: "#F2EFE8" },
+  { id: "ledger",   name: "Ledger",   desc: "Numbered sections, hairline rules. Boardroom-ready", bg: "#F3EFE6", dark: false, accent: "#A8801F", h: "rule", tf: "#14213D" },
+  { id: "terminal", name: "Terminal", desc: "Monospace, glowing accent, ~/section headings", bg: "#0B0F14", dark: true, accent: "#3DDC97", h: "rule", tf: "#D6E4E8" },
+  { id: "clinic",   name: "Clinic",   desc: "Calm, airy cards with a soft tinted header", bg: "#F2F9F8", dark: false, accent: "#0F8B8D", h: "rule", tf: "#0F2E33" },
+  { id: "studio",   name: "Studio",   desc: "Loud color block, sticker headings, hard shadows", bg: "#FFF4E0", dark: false, accent: "#FF5A36", h: "fill", tf: "#111111" },
+  { id: "campus",   name: "Campus",   desc: "Dot-grid notebook, handwritten headings", bg: "#FFF9EE", dark: false, accent: "#E07A5F", h: "fill", tf: "#3D2B1F" },
+  { id: "brief",    name: "Brief",    desc: "Formal masthead, serif type, § headings", bg: "#FAF8F3", dark: false, accent: "#7C1D2B", h: "rule", tf: "#1C1917" },
+  { id: "lab",      name: "Lab",      desc: "Sticky sidebar, numbered sections, paper-style", bg: "#F4F6FA", dark: false, accent: "#2563EB", h: "side", tf: "#1E293B" },
 ];
 
-const ACCENTS = ["#C99A3B", "#2F6F62", "#3B5B8C", "#B3452E", "#7A4E9C", "#1B2430"];
+// which template suits which major, and which audience (goal)
+const FIELD_TPL = {
+  "Business & Finance": "ledger", "Tech & Engineering": "terminal", "Health & Medicine": "clinic",
+  "Arts & Design": "studio", "Education": "campus", "Law & Policy": "brief",
+  "Science & Research": "lab", "Other": "classic",
+};
+const GOAL_TPL = {
+  "Job applications": "classic", "Internships": "classic",
+  "Grad school & higher ed": "lab", "Building my personal brand": "studio",
+};
+// returns [best for field, best for audience] (distinct)
+function recommendTemplates(answers) {
+  const a = answers || {};
+  const out = [];
+  [FIELD_TPL[a.field], GOAL_TPL[a.goal]].forEach((id) => { if (id && !out.includes(id)) out.push(id); });
+  if (a.field === "Law & Policy" && a.goal === "Grad school & higher ed") out.splice(1, 1, "lab");
+  return out.length ? out : ["classic"];
+}
+function tplAccent(profile) {
+  const tpl = TEMPLATES.find((t) => t.id === profile.template) || TEMPLATES[0];
+  return profile.accent || tpl.accent || ACCENTS[0];
+}
+function loadTplFonts() {
+  if (document.getElementById("tplFonts")) return;
+  const l = document.createElement("link");
+  l.id = "tplFonts"; l.rel = "stylesheet";
+  l.href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Space+Grotesk:wght@500;700&family=Caveat:wght@600;700&display=swap";
+  document.head.appendChild(l);
+}
+
+const ACCENTS = ["#C99A3B", "#2F6F62", "#3B5B8C", "#B3452E", "#7A4E9C", "#1B2430", "#0F8B8D", "#FF5A36"];
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -750,7 +817,7 @@ function shadeHex(hex, f) {
 function applyDashboardTheme(profile) {
   const b = document.body;
   const tpl = TEMPLATES.find((t) => t.id === profile.template) || TEMPLATES[0];
-  const accent = profile.accent || ACCENTS[0];
+  const accent = tplAccent(profile);
   b.style.setProperty("--brass", accent);
   b.style.setProperty("--brass-dark", shadeHex(accent, 0.82));
   if (tpl.dark) {
@@ -761,104 +828,89 @@ function applyDashboardTheme(profile) {
   b.classList.toggle("dash-midnight", !!tpl.dark);
 }
 
+// picks readable text (dark or white) for whatever accent color sits behind it
+function onAccent(hex) {
+  const h = (hex || "#C99A3B").replace("#", "");
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.substr(i, 2), 16) / 255)
+    .map((c) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.3 ? "#14181F" : "#FFFFFF";
+}
+
 /* =========================================================
-   Renders the "public view" markup — used both by the live
-   preview panel in dashboard.html and by profile.html.
+   Public page: one scroll, no tabs. A block of your accent
+   color with your name set huge, then plain sections below.
+   Used by the dashboard preview and by profile.html.
    ========================================================= */
 function renderPublicMarkup(state, opts = {}) {
   const p = state.profile;
-  const compact = !!opts.compact;
+  const name = p.name || state.username || "Your name";
+  loadTplFonts();
+  const accent = tplAccent(p);
+  const tpl = TEMPLATES.find((t) => t.id === p.template) || TEMPLATES[0];
+  const words = name.trim().split(/\s+/);
+  const fs = Math.min(17, 130 / Math.max(...words.map((w) => w.length))).toFixed(1);
 
-  const avatarInner = p.avatar
-    ? `<img src="${p.avatar}" alt="">`
-    : initials(p.name || state.username);
-
-  const socialChips = SOCIAL_PLATFORMS.filter((s) => p.socials[s.key])
-    .map((s) => `<a class="pv-social-chip" style="background:${s.color}" href="${withHttp(p.socials[s.key])}" target="_blank" rel="noopener" title="${s.label}" aria-label="${s.label}">${socialIcon(s.key)}</a>`)
+  const avatarInner = p.avatar ? `<img src="${p.avatar}" alt="">` : initials(name);
+  const chips = SOCIAL_PLATFORMS.filter((s) => p.socials[s.key])
+    .map((s) => `<a class="pv-social-chip" href="${withHttp(p.socials[s.key])}" target="_blank" rel="noopener" title="${s.label}" aria-label="${s.label}">${socialIcon(s.key)}</a>`)
     .concat((p.socialsOther || []).filter((o) => o.url && o.url.trim())
-      .map((o) => `<a class="pv-social-chip" style="background:${OTHER_SOCIAL_COLOR}" href="${escapeHtml(withHttp(o.url))}" target="_blank" rel="noopener" title="${escapeHtml(o.label || "Link")}" aria-label="${escapeHtml(o.label || "Link")}">${socialIcon("other")}</a>`))
+      .map((o) => `<a class="pv-social-chip" href="${escapeHtml(withHttp(o.url))}" target="_blank" rel="noopener" title="${escapeHtml(o.label || "Link")}" aria-label="${escapeHtml(o.label || "Link")}">${socialIcon("other")}</a>`))
     .join("");
 
-  const mediaHtml = p.media.length
-    ? p.media.map((m) => `
-        <div class="pv-media-card">
-          <div class="plat">${escapeHtml(m.platform)}</div>
-          <a href="${withHttp(m.url)}" target="_blank" rel="noopener">${escapeHtml(m.title || m.url)}</a>
-          ${m.description ? `<p class="pv-media-desc" style="white-space:pre-wrap;">${escapeHtml(m.description)}</p>` : ""}
-        </div>`).join("")
-    : `<p class="pv-empty">No media added yet.</p>`;
+  const sec = (title, html) => html ? `<section class="v2-sec"><h2 class="v2-h">${title}</h2><div>${html}</div></section>` : "";
 
-  const resumeFiles = getResumeFiles(p.resume);
-  const resumeHtml = (resumeFiles.length || p.resume.link)
-    ? `
-      ${resumeFiles.map((f, i) => `
-        <div class="res-card" data-res="${i}">
-          <div class="res-head">
-            <span class="res-name">${escapeHtml(f.name)}</span>
-            <a class="btn btn-outline btn-sm" data-res-dl href="#" download="${escapeHtml(f.name)}">Download</a>
-          </div>
-          ${isPdfFile(f) ? `<div class="res-frame" data-res-view></div>` : `<p class="pv-empty res-note">Preview isn't available for Word files. Download it to view.</p>`}
-        </div>`).join("")}
-      ${p.resume.link ? `<div class="pv-row"><span class="k">Link</span><a href="${withHttp(p.resume.link)}" target="_blank" rel="noopener">${escapeHtml(p.resume.link)}</a></div>` : ""}
-    `
-    : `<p class="pv-empty">No files uploaded yet.</p>`;
+  const exp = sortedExperience((p.experience || {}).entries || []).filter((e) => e.title || e.company);
+  const proj = ((p.projects || {}).entries || []).filter((x) => x.name);
+  const files = getResumeFiles(p.resume);
+  const c = p.contact;
 
-  const aboutText = p.about ? `<p style="white-space:pre-wrap;">${escapeHtml(p.about)}</p>` : "";
-  const aboutGraph = renderTimelineGraphHtml((p.experience || {}).entries, (p.projects || {}).entries);
-  const aboutLinks = renderProjectLinksHtml((p.projects || {}).entries, p.media);
-  const aboutHtml = (aboutText || aboutGraph || aboutLinks)
-    ? aboutText + aboutGraph + aboutLinks
-    : `<p class="pv-empty">Nothing written yet.</p>`;
+  const media = (p.media || []).map((m) => `
+    <div class="pv-media-card">
+      <div class="plat">${escapeHtml(m.platform)}</div>
+      <a href="${withHttp(m.url)}" target="_blank" rel="noopener">${escapeHtml(m.title || m.url)}</a>
+      ${m.description ? `<p class="pv-media-desc" style="white-space:pre-wrap;">${escapeHtml(m.description)}</p>` : ""}
+    </div>`).join("");
 
-  const contactHtml = (p.contact.email || p.contact.phone || p.contact.location)
-    ? `
-      ${p.contact.email ? `<div class="pv-row"><span class="k">Email</span><a href="mailto:${escapeHtml(p.contact.email)}">${escapeHtml(p.contact.email)}</a></div>` : ""}
-      ${p.contact.phone ? `<div class="pv-row"><span class="k">Phone</span><span>${escapeHtml(p.contact.phone)}</span></div>` : ""}
-      ${p.contact.location ? `<div class="pv-row"><span class="k">Location</span><span>${escapeHtml(p.contact.location)}</span></div>` : ""}
-    `
-    : `<p class="pv-empty">No contact info yet.</p>`;
+  const FILE_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>';
+  const resume = (files.length || p.resume.link) ? files.map((f, i) => {
+    const ext = ((f.name || "").split(".").pop() || "file").toUpperCase();
+    const pdf = isPdfFile(f);
+    return `<div class="res-card" data-res="${i}">
+      <div class="res-head"><span class="res-ico">${FILE_ICON}</span><span class="res-name">${escapeHtml(f.name)}<small>${escapeHtml(ext)}${pdf ? " \u00b7 preview below" : ""}</small></span>
+        <a class="btn btn-outline btn-sm" data-res-dl href="#" download="${escapeHtml(f.name)}">Download</a></div>
+      ${pdf ? `<div class="res-frame" data-res-view></div>` : `<p class="res-note pv-empty">Word files can\u2019t be previewed in the browser. Download to read it.</p>`}
+    </div>`;
+  }).join("")
+    + (p.resume.link ? `<div class="res-card"><div class="res-head"><span class="res-ico">${FILE_ICON}</span><span class="res-name">Resume link<small>${escapeHtml(p.resume.link.replace(/^https?:\/\/(www\.)?/i, ""))}</small></span><a class="btn btn-outline btn-sm" href="${escapeHtml(withHttp(p.resume.link))}" target="_blank" rel="noopener">Open</a></div></div>` : "") : "";
 
-  const bookingHtml = p.booking.gmailConnected
-    ? `<div class="cal-mount" data-cal-mount></div>`
-    : `<p class="pv-empty">This page's calendar isn't connected yet.</p>`;
+  const contact = (c.email || c.phone || c.location)
+    ? (c.email ? `<a class="v2-mail" href="mailto:${escapeHtml(c.email)}">${escapeHtml(c.email)}</a>` : "")
+      + (c.phone ? `<div class="pv-row"><span class="k">Phone</span><span>${escapeHtml(c.phone)}</span></div>` : "")
+      + (c.location ? `<div class="pv-row"><span class="k">Location</span><span>${escapeHtml(c.location)}</span></div>` : "") : "";
 
-  const tpl = TEMPLATES.find((t) => t.id === p.template) || TEMPLATES[0];
-  const timelineHtml = renderTimelineHtml((p.experience || {}).entries);
-  const projectsHtml = renderProjectsHtml((p.projects || {}).entries);
-  const accentStyle = p.accent ? ` style="--brass:${escapeHtml(p.accent)}"` : "";
+  const body = [
+    sec("About", p.about ? `<p class="v2-about">${escapeHtml(p.about)}</p>` : ""),
+    sec("Experience", exp.length ? renderTimelineHtml(p.experience.entries, proj) : ""),
+    sec("Projects", proj.length ? renderProjectsHtml(proj) : ""),
+    sec("Media", media),
+    sec("Resume", resume),
+    sec("Contact", contact),
+    sec("Book a time", p.booking.gmailConnected ? `<div class="cal-mount" data-cal-mount></div>` : ""),
+  ].join("");
 
   return `
-    <div class="tpl tpl-${tpl.id}"${accentStyle}>
-    <div class="tpl-layout">
-    <div class="tpl-side">
-    <div class="pv-head">
-      <div class="pv-avatar">${avatarInner}</div>
-      <h2 class="pv-name serif">${escapeHtml(p.name || state.username || "Your name")}</h2>
-      ${p.tagline ? `<p class="pv-tag">${escapeHtml(p.tagline)}</p>` : ""}
-      ${socialChips ? `<div class="pv-socials">${socialChips}</div>` : ""}
-    </div>
-    </div>
-    <div class="tpl-main">
-    <div class="pv-tabs" role="tablist">
-      <button data-pv-tab="about" class="active">About</button>
-      <button data-pv-tab="resume">Resume</button>
-      <button data-pv-tab="timeline">Experience</button>
-      <button data-pv-tab="projects">Projects</button>
-      <button data-pv-tab="media">Media</button>
-      <button data-pv-tab="contact">Contact</button>
-      <button data-pv-tab="booking">Booking</button>
-    </div>
-    <div class="pv-panel active" data-pv-panel="about">${aboutHtml}</div>
-    <div class="pv-panel" data-pv-panel="resume">${resumeHtml}</div>
-    <div class="pv-panel" data-pv-panel="timeline">${timelineHtml}</div>
-    <div class="pv-panel" data-pv-panel="projects">${projectsHtml}</div>
-    <div class="pv-panel" data-pv-panel="media">${mediaHtml}</div>
-    <div class="pv-panel" data-pv-panel="contact">${contactHtml}</div>
-    <div class="pv-panel" data-pv-panel="booking">${bookingHtml}</div>
-    </div>
-    </div>
-    </div>
-  `;
+    <div class="tpl tpl-${tpl.id} v2${opts.compact ? "" : " v2-anim"}" style="--brass:${escapeHtml(accent)};--on:${onAccent(accent)};--fs:${fs}">
+      <header class="v2-hero">
+        <div class="v2-top">
+          <div class="pv-avatar">${avatarInner}</div>
+          ${chips ? `<div class="v2-socials">${chips}</div>` : ""}
+        </div>
+        <h1 class="v2-name">${words.map((w, i) => `<span class="w" style="--i:${i}">${escapeHtml(w)}</span>`).join("")}</h1>
+        ${p.tagline ? `<p class="v2-tag">${escapeHtml(p.tagline)}</p>` : ""}
+      </header>
+      <div class="v2-body">${body || `<p class="pv-empty">Add your story, experience, and links in the editor.</p>`}</div>
+      <footer class="v2-foot">made with per.bio</footer>
+    </div>`;
 }
 
 const blobUrlCache = new Map();
@@ -888,19 +940,7 @@ function mountResumePreviews(root, state) {
   });
 }
 
-function wirePublicTabs(root, state) {
-  const tabs = root.querySelectorAll("[data-pv-tab]");
-  tabs.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const target = btn.getAttribute("data-pv-tab");
-      root.querySelectorAll("[data-pv-tab]").forEach((b) => b.classList.toggle("active", b === btn));
-      root.querySelectorAll("[data-pv-panel]").forEach((p) =>
-        p.classList.toggle("active", p.getAttribute("data-pv-panel") === target)
-      );
-      if (target === "resume" && state) mountResumePreviews(root, state);
-    });
-  });
-}
+function wirePublicTabs(root, state) { if (state) mountResumePreviews(root, state); }
 
 /* =========================================================
    Page init — dispatched by data-page on <body>
@@ -1037,6 +1077,8 @@ function initOnboarding() {
       state.username = draft.username;
       state.answers = { goal: draft.goal, age: draft.age, field: draft.field };
       state.onboardingComplete = true;
+      state.profile.template = recommendTemplates(state.answers)[0];
+      state.profile.accent = "";
       if (!state.profile.name) {
         state.profile.name = draft.username
           .split("-")
@@ -1458,29 +1500,35 @@ function initDashboard() {
 
   function renderDesign() {
     applyDashboardTheme(state.profile);
-    tplGrid.innerHTML = TEMPLATES.map((t) => `
+    loadTplFonts();
+    const recs = recommendTemplates(state.answers);
+    const ordered = recs.map((id) => TEMPLATES.find((t) => t.id === id)).concat(TEMPLATES.filter((t) => !recs.includes(t.id)));
+    const badges = [`Best for ${state.answers.field || "you"}`, `Fits ${(state.answers.goal || "your goal").toLowerCase()}`];
+    tplGrid.innerHTML = ordered.map((t) => `
       <button type="button" class="tpl-card ${state.profile.template === t.id ? "selected" : ""}" data-tpl="${t.id}">
-        <div class="thumb thumb-${t.id}"><i class="th-av"></i><i class="th-l1"></i><i class="th-l2"></i><i class="th-bar"></i></div>
+        <div class="thumb tv" data-h="${t.h}" style="--tb:${t.bg};--tf:${t.tf};--ta:${t.accent}"><i class="th-av"></i><i class="th-l1"></i><i class="th-l2"></i><i class="th-bar"></i></div>
         <div class="tpl-name">${t.name}</div>
+        ${recs.includes(t.id) ? `<div class="tpl-rec">${escapeHtml(badges[recs.indexOf(t.id)])}</div>` : ""}
         <div class="tpl-desc">${t.desc}</div>
       </button>
     `).join("");
     tplGrid.querySelectorAll("[data-tpl]").forEach((btn) => {
       btn.addEventListener("click", () => {
         state.profile.template = btn.getAttribute("data-tpl");
+        state.profile.accent = "";
         renderDesign();
         persist();
       });
     });
 
-    const current = state.profile.accent || ACCENTS[0];
+    const current = tplAccent(state.profile);
     swatchRow.innerHTML = ACCENTS.map((c) => `
       <button type="button" class="swatch ${c === current ? "selected" : ""}" data-accent="${c}" style="background:${c}" title="${c}"></button>
     `).join("");
     swatchRow.querySelectorAll("[data-accent]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const c = btn.getAttribute("data-accent");
-        state.profile.accent = c === ACCENTS[0] ? "" : c;
+        state.profile.accent = c;
         renderDesign();
         persist();
       });
