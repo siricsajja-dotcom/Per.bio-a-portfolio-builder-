@@ -739,6 +739,28 @@ function withHttp(url) {
   return /^https?:\/\//i.test(url) ? url : `https://${url}`;
 }
 
+/* Re-skins the whole dashboard to match the chosen template + accent */
+function shadeHex(hex, f) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  const c = (v) => Math.max(0, Math.min(255, Math.round(v * f))).toString(16).padStart(2, "0");
+  return "#" + c(n >> 16) + c((n >> 8) & 255) + c(n & 255);
+}
+function applyDashboardTheme(profile) {
+  const b = document.body;
+  const tpl = TEMPLATES.find((t) => t.id === profile.template) || TEMPLATES[0];
+  const accent = profile.accent || ACCENTS[0];
+  b.style.setProperty("--brass", accent);
+  b.style.setProperty("--brass-dark", shadeHex(accent, 0.82));
+  if (tpl.dark) {
+    b.style.removeProperty("--paper");
+  } else {
+    b.style.setProperty("--paper", tpl.bg);
+  }
+  b.classList.toggle("dash-midnight", !!tpl.dark);
+}
+
 /* =========================================================
    Renders the "public view" markup — used both by the live
    preview panel in dashboard.html and by profile.html.
@@ -1435,6 +1457,7 @@ function initDashboard() {
   const swatchRow = document.getElementById("swatchRow");
 
   function renderDesign() {
+    applyDashboardTheme(state.profile);
     tplGrid.innerHTML = TEMPLATES.map((t) => `
       <button type="button" class="tpl-card ${state.profile.template === t.id ? "selected" : ""}" data-tpl="${t.id}">
         <div class="thumb thumb-${t.id}"><i class="th-av"></i><i class="th-l1"></i><i class="th-l2"></i><i class="th-bar"></i></div>

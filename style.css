@@ -517,3 +517,19 @@ body.tpl-dark .public-topbar{ color:#9AA3AF; }
 .ab-link-name{ font-size:14.5px; font-weight:600; }
 .ab-nolink{ color: var(--muted); font-weight:500; }
 .ab-url{ font-size:12px; color: var(--muted); text-align:right; word-break:break-all; min-width:0; }
+
+
+/* ---------- dashboard re-themes as template/accent are chosen ---------- */
+body[data-page="dashboard"]{ transition: background .25s ease, color .25s ease; }
+body[data-page="dashboard"] .topbar,
+body[data-page="dashboard"] .tab-rail,
+body[data-page="dashboard"] .preview,
+body[data-page="dashboard"] .editor{ transition: background .25s ease, border-color .25s ease; }
+body.dash-midnight{
+  --ink:#F2EFE8; --ink-2:#D9D5CB; --paper:#12181F; --paper-2:#1B2430;
+  --line:#2E3946; --line-strong:#3E4B59; --muted:#9AA3AF;
+}
+body.dash-midnight .topbar{ background:#0B0F14; color:#F2EFE8; }
+body.dash-midnight .btn-primary{ color:#1B2430; }
+body.dash-midnight .btn-ghost{ color:#F2EFE8; }
+body.dash-midnight .swatch.selected{ box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink); }
