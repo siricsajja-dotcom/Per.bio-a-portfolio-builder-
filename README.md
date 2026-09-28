@@ -1,70 +1,36 @@
 # per.bio (A portfolio builder)
 
-**A clean, personal bio and portfolio page for college students.** Show your socials, media, resume, story, and availability in one link, built for job and grad school applications.
+A lightweight portfolio-builder for college students — no build step, no backend. Open it in VS Code and it just runs in the browser.
 
-per.bio walks a student through claiming a username and answering a few quick questions, then gives them an editor and a polished public page to share with recruiters and admissions officers.
+## Files
 
-## Features
+- `index.html` — onboarding: pick a username, then answer 3 quick questions (goal, age range, field)
+- `dashboard.html` — the editor: left tab rail (Profile, Socials, Media, Resume/CV, About Me, Contact Info, Booking) with a live preview on the right
+- `profile.html` — the actual public page a viewer would see
+- `style.css` — the whole design system (colors, type, layout)
+- `script.js` — all the logic: state management, onboarding flow, editor, and the public-page renderer
 
-- **Guided onboarding**: claim a username, then answer three quick questions (goal, age range, field of interest)
-- **Editor with live preview**: edit on the left, watch your public page update on the right
-- **Profile**: name, photo, and a one-line tagline
-- **Tabbed public page**:
-  - **Socials**: Facebook, Instagram, TikTok, Snapchat, Pinterest, YouTube, LinkedIn, Handshake, X
-  - **Media**: YouTube, TikTok, and Vimeo links
-  - **Resume / CV**: upload a file or link to one
-  - **About Me**: the longer story
-  - **Contact Info**: email, phone, location
-  - **Booking**: a calendar linked to your Gmail, with your chosen days, hours, and slot length. Visitors pick a time and book
-- **Templates**: choose from Classic, Midnight, Editorial, Banner, or Split, plus an accent color, from the Design tab. Your content carries over when you switch
-- **Zero dependencies**: plain HTML, CSS, and JavaScript. No build step
+## Run it
 
-## Getting started
+No install needed. Easiest option:
 
-1. Clone the repo:
-   ```
-   git clone https://github.com/siricsajja-dotcom/Per.bio-a-portfolio-builder-.git
-   cd Per.bio-a-portfolio-builder-
-   ```
-2. Open the folder in VS Code.
-3. Install the **Live Server** extension, then right-click `index.html` and choose **Open with Live Server**.
+1. Open this folder in VS Code
+2. Install the **Live Server** extension (if you don't have it)
+3. Right-click `index.html` → **Open with Live Server**
 
-You can also double-click `index.html` to open it directly in a browser, though file uploads work more reliably over `http://` (Live Server) than `file://`.
+Or just double-click `index.html` to open it directly in a browser (works fine, though file uploads behave slightly better served over `http://` than `file://`).
 
-## Project structure
+## How data is stored right now
 
-| File | Purpose |
-| --- | --- |
-| `index.html` | Onboarding: username and the three questions |
-| `dashboard.html` | Editor with tab rail and live preview |
-| `profile.html` | The public-facing portfolio page |
-| `style.css` | Design system (colors, type, layout, calendar) |
-| `script.js` | State, onboarding flow, editor logic, page and calendar rendering |
+Everything is saved to the browser's `localStorage` under the key `perbio_state` — that's why it's all "same template" and single-user for now, exactly as you described. There's no server yet, so:
 
-## How it works
+- Data is per-browser, not shared across devices
+- "Start over" in the dashboard top bar wipes it and sends you back to onboarding
+- The uploaded resume/avatar are stored as base64 in `localStorage`, so keep files reasonably small (a couple MB) — this is a placeholder for real file storage later
 
-All data is stored in the browser's `localStorage` under the key `perbio_state`. The state shape is defined in `defaultState()` in `script.js`. The chosen template and accent color are saved as `profile.template` and `profile.accent`.
+## Where to take this next
 
-- Data is per-browser and per-device, since there is no server yet
-- **Start over** in the dashboard top bar clears everything and returns to onboarding
-- Uploaded photos and resumes are stored as base64, so keep files small (a couple of MB)
-
-## Current limitations
-
-- **Gmail booking is simulated.** Connecting Gmail stores the email address and generates a calendar from your chosen days and hours. It does not call the Google Calendar API or send real invites yet.
-- **No accounts or hosting.** Usernames are not checked for uniqueness and pages are not shared between devices.
-- **Social icons** are colored initials (FB, IG, TT...) to stay dependency-free.
-
-## Roadmap
-
-- [x] Multiple page templates (see `TEMPLATES` in `script.js` and the template styles in `style.css`)
-- [ ] More templates and per-template layout options
-- [ ] Real accounts and storage (e.g. Supabase or Firebase)
-- [ ] Google Calendar API integration for live availability and real invites
-- [ ] Username availability checks
-- [ ] Real SVG brand icons
-- [ ] Embedded video previews for YouTube, TikTok, and Vimeo
-
-## Design
-
-An editorial, academic feel: deep ink and warm paper tones with a single brass accent, Fraunces for headings and Inter for body text, and hairline rules instead of heavy card shadows.
+- **Templates**: `dashboard.html`/`profile.html` currently render one layout. To add templates, branch `renderPublicMarkup()` in `script.js` on a `state.profile.template` field and swap in alternate markup/CSS per template.
+- **Real accounts**: swap `localStorage` for a backend (e.g. Supabase, Firebase, or your own API) — the state shape in `defaultState()` in `script.js` is the schema to persist.
+- **Username availability**: right now any username is accepted locally; hook `validateUsername()` in `script.js` up to a real API call to check for collisions.
+- **Icons**: platform badges are currently colored initials (FB, IG, TT…) to keep this dependency-free — swap in real SVG icons whenever you're ready.
