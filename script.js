@@ -20,6 +20,16 @@ const SOCIAL_PLATFORMS = [
 
 const MEDIA_PLATFORMS = ["YouTube", "TikTok", "Vimeo"];
 
+const TEMPLATES = [
+  { id: "classic",   name: "Classic",   desc: "Warm paper, centered",            bg: "#F7F5F1", dark: false },
+  { id: "midnight",  name: "Midnight",  desc: "Dark and confident",              bg: "#12181F", dark: true  },
+  { id: "editorial", name: "Editorial", desc: "Left-aligned, big serif name",    bg: "#FFFFFF", dark: false },
+  { id: "banner",    name: "Banner",    desc: "Color header behind your photo",  bg: "#F7F5F1", dark: false },
+  { id: "split",     name: "Split",     desc: "Profile left, content right",     bg: "#F7F5F1", dark: false },
+];
+
+const ACCENTS = ["#C99A3B", "#2F6F62", "#3B5B8C", "#B3452E", "#7A4E9C", "#1B2430"];
+
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
@@ -204,6 +214,8 @@ function defaultState() {
     onboardingComplete: false,
     answers: { goal: "", age: "", field: "" },
     profile: {
+      template: "classic",
+      accent: "",
       name: "",
       avatar: "",
       tagline: "",
@@ -323,13 +335,21 @@ function renderPublicMarkup(state, opts = {}) {
     ? `<div class="cal-mount" data-cal-mount></div>`
     : `<p class="pv-empty">This page's calendar isn't connected yet.</p>`;
 
+  const tpl = TEMPLATES.find((t) => t.id === p.template) || TEMPLATES[0];
+  const accentStyle = p.accent ? ` style="--brass:${escapeHtml(p.accent)}"` : "";
+
   return `
+    <div class="tpl tpl-${tpl.id}"${accentStyle}>
+    <div class="tpl-layout">
+    <div class="tpl-side">
     <div class="pv-head">
       <div class="pv-avatar">${avatarInner}</div>
       <h2 class="pv-name serif">${escapeHtml(p.name || state.username || "Your name")}</h2>
       ${p.tagline ? `<p class="pv-tag">${escapeHtml(p.tagline)}</p>` : ""}
       ${socialChips ? `<div class="pv-socials">${socialChips}</div>` : ""}
     </div>
+    </div>
+    <div class="tpl-main">
     <div class="pv-tabs" role="tablist">
       <button data-pv-tab="socials" class="active">Socials</button>
       <button data-pv-tab="media">Media</button>
@@ -346,6 +366,9 @@ function renderPublicMarkup(state, opts = {}) {
     <div class="pv-panel" data-pv-panel="about">${aboutHtml}</div>
     <div class="pv-panel" data-pv-panel="contact">${contactHtml}</div>
     <div class="pv-panel" data-pv-panel="booking">${bookingHtml}</div>
+    </div>
+    </div>
+    </div>
   `;
 }
 
@@ -780,6 +803,41 @@ function initDashboard() {
 
   renderGmailUI();
 
+  /* ---- Design panel ---- */
+  const tplGrid = document.getElementById("tplGrid");
+  const swatchRow = document.getElementById("swatchRow");
+
+  function renderDesign() {
+    tplGrid.innerHTML = TEMPLATES.map((t) => `
+      <button type="button" class="tpl-card ${state.profile.template === t.id ? "selected" : ""}" data-tpl="${t.id}">
+        <div class="thumb thumb-${t.id}"><i class="th-av"></i><i class="th-l1"></i><i class="th-l2"></i><i class="th-bar"></i></div>
+        <div class="tpl-name">${t.name}</div>
+        <div class="tpl-desc">${t.desc}</div>
+      </button>
+    `).join("");
+    tplGrid.querySelectorAll("[data-tpl]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        state.profile.template = btn.getAttribute("data-tpl");
+        renderDesign();
+        persist();
+      });
+    });
+
+    const current = state.profile.accent || ACCENTS[0];
+    swatchRow.innerHTML = ACCENTS.map((c) => `
+      <button type="button" class="swatch ${c === current ? "selected" : ""}" data-accent="${c}" style="background:${c}" title="${c}"></button>
+    `).join("");
+    swatchRow.querySelectorAll("[data-accent]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const c = btn.getAttribute("data-accent");
+        state.profile.accent = c === ACCENTS[0] ? "" : c;
+        renderDesign();
+        persist();
+      });
+    });
+  }
+  renderDesign();
+
   /* ---- reset ---- */
   document.getElementById("resetBtn").addEventListener("click", () => {
     if (confirm("Reset all demo data and start over?")) {
@@ -799,5 +857,8 @@ function initProfile() {
   root.innerHTML = renderPublicMarkup(state, { compact: false });
   wirePublicTabs(root);
   mountCalendarIfNeeded(root, state, () => saveState(state));
+  const tpl = TEMPLATES.find((t) => t.id === state.profile.template) || TEMPLATES[0];
+  document.body.style.background = tpl.bg;
+  document.body.classList.toggle("tpl-dark", tpl.dark);
   document.title = `${state.profile.name || state.username || "Portfolio"} — per.bio`;
 }

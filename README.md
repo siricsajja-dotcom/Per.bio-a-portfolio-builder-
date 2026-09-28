@@ -1,4 +1,4 @@
-# Per.bio (A portfolio builder)
+# per.bio (A portfolio builder)
 
 **A clean, personal bio and portfolio page for college students.** Show your socials, media, resume, story, and availability in one link, built for job and grad school applications.
 
@@ -16,14 +16,15 @@ per.bio walks a student through claiming a username and answering a few quick qu
   - **About Me**: the longer story
   - **Contact Info**: email, phone, location
   - **Booking**: a calendar linked to your Gmail, with your chosen days, hours, and slot length. Visitors pick a time and book
+- **Templates**: choose from Classic, Midnight, Editorial, Banner, or Split, plus an accent color, from the Design tab. Your content carries over when you switch
 - **Zero dependencies**: plain HTML, CSS, and JavaScript. No build step
 
 ## Getting started
 
 1. Clone the repo:
    ```
-   git clone https://github.com/YOUR-USERNAME/per-bio.git
-   cd per-bio
+   git clone https://github.com/siricsajja-dotcom/Per.bio-a-portfolio-builder-.git
+   cd Per.bio-a-portfolio-builder-
    ```
 2. Open the folder in VS Code.
 3. Install the **Live Server** extension, then right-click `index.html` and choose **Open with Live Server**.
@@ -42,7 +43,7 @@ You can also double-click `index.html` to open it directly in a browser, though 
 
 ## How it works
 
-All data is stored in the browser's `localStorage` under the key `perbio_state`. The state shape is defined in `defaultState()` in `script.js`. Every user currently gets the same page template.
+All data is stored in the browser's `localStorage` under the key `perbio_state`. The state shape is defined in `defaultState()` in `script.js`. The chosen template and accent color are saved as `profile.template` and `profile.accent`.
 
 - Data is per-browser and per-device, since there is no server yet
 - **Start over** in the dashboard top bar clears everything and returns to onboarding
@@ -56,7 +57,8 @@ All data is stored in the browser's `localStorage` under the key `perbio_state`.
 
 ## Roadmap
 
-- [ ] Multiple page templates (branch `renderPublicMarkup()` on a template field)
+- [x] Multiple page templates (see `TEMPLATES` in `script.js` and the template styles in `style.css`)
+- [ ] More templates and per-template layout options
 - [ ] Real accounts and storage (e.g. Supabase or Firebase)
 - [ ] Google Calendar API integration for live availability and real invites
 - [ ] Username availability checks
