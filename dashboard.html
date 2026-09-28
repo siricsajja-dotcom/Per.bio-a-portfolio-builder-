@@ -26,12 +26,11 @@
     <nav class="tab-rail">
       <button data-tab="profile" class="active">Profile</button>
       <button data-tab="about">About Me</button>
-      <button data-tab="design">Design</button>
       <button data-tab="socials">Socials</button>
-      <button data-tab="media">Media</button>
-      <button data-tab="resume">Resume / CV</button>
-      <button data-tab="timeline">Work Timeline</button>
+      <button data-tab="resume">Resume</button>
+      <button data-tab="timeline">Experience</button>
       <button data-tab="projects">Projects</button>
+      <button data-tab="media">Media</button>
       <button data-tab="contact">Contact Info</button>
       <button data-tab="booking">Booking</button>
     </nav>
@@ -56,21 +55,25 @@
           <label for="taglineInput">One-line tagline</label>
           <input id="taglineInput" type="text" placeholder="Senior @ The College of New Jersey · Product Design">
         </div>
-      </section>
-
-      <section class="panel" data-panel="design">
-        <h2>Design</h2>
-        <p class="panel-sub">Pick a template and an accent color. Your content carries over, so switch any time.</p>
-        <h3 class="sub-h" style="margin-top:0">Template</h3>
+        <h3 class="sub-h" style="margin-top:32px">Design</h3>
+        <p class="panel-sub" style="margin-bottom:16px">Pick a template and an accent color. Your content carries over, so switch any time.</p>
+        <h4 class="sub-h" style="margin-top:0;font-size:13px;color:var(--muted)">Template</h4>
         <div class="tpl-grid" id="tplGrid"></div>
-        <h3 class="sub-h">Accent color</h3>
+        <h4 class="sub-h" style="font-size:13px;color:var(--muted)">Accent color</h4>
         <div class="swatch-row" id="swatchRow"></div>
+
       </section>
 
       <section class="panel" data-panel="socials">
         <h2>Socials</h2>
         <p class="panel-sub">Leave any of these blank to hide them from your page.</p>
         <div class="social-grid" id="socialGrid"></div>
+        <h3 class="sub-h" style="margin-top:28px">Other links</h3>
+        <p class="panel-sub" style="margin-bottom:12px">Anything not listed above: a personal site, Behance, Substack, Discord, whatever. Give it a label and a URL.</p>
+        <div class="social-grid" id="otherSocialList"></div>
+        <div class="list-add-row" style="margin-top:12px">
+          <button type="button" class="btn btn-outline btn-sm" id="addOtherSocialBtn">+ Add other link</button>
+        </div>
       </section>
 
       <section class="panel" data-panel="media">
@@ -83,7 +86,7 @@
       </section>
 
       <section class="panel" data-panel="resume">
-        <h2>Resume / CV</h2>
+        <h2>Resume</h2>
         <p class="panel-sub">Upload up to 5 files (PDF, DOC, or DOCX), or link to one hosted elsewhere.</p>
 
         <div id="filesList"></div>
@@ -98,8 +101,8 @@
       </section>
 
       <section class="panel" data-panel="timeline">
-        <h2>Work Timeline</h2>
-        <p class="panel-sub">Upload your resume and your work experience is turned into a timeline automatically. The file is read in your browser and isn't sent anywhere.</p>
+        <h2>Experience</h2>
+        <p class="panel-sub">Upload your resume and your work experience is filled in automatically. The file is read in your browser and isn't sent anywhere.</p>
         <div class="resume-drop" id="tlDrop" role="button" tabindex="0">Click to upload your resume (PDF or DOCX)</div>
         <input type="file" id="tlInput" accept=".pdf,.docx" class="hidden">
         <div id="tlSaved"></div>
@@ -112,7 +115,7 @@
 
       <section class="panel" data-panel="about">
         <h2>About Me</h2>
-        <p class="panel-sub">The longer story — background, interests, what you're looking for.</p>
+        <p class="panel-sub">The longer story — background, interests, what you're looking for. Below your text, visitors also see a chart of your experience and projects, plus your projects with their links.</p>
         <div class="field">
           <textarea id="aboutInput" rows="10" placeholder="I'm a senior studying..."></textarea>
         </div>
@@ -120,7 +123,7 @@
 
       <section class="panel" data-panel="projects">
         <h2>Projects</h2>
-        <p class="panel-sub">Class, personal, and side projects live here, separate from your work timeline. Upload a resume with a Projects section to fill this in, or add them yourself.</p>
+        <p class="panel-sub">Class, personal, and side projects live here, separate from your experience. Upload a resume with a Projects section to fill this in, or add them yourself.</p>
         <div class="resume-drop" id="pjDrop" role="button" tabindex="0">Click to upload your resume (PDF or DOCX)</div>
         <input type="file" id="pjInput" accept=".pdf,.docx" class="hidden">
         <div id="pjSaved"></div>

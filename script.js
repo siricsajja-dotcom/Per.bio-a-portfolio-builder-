@@ -7,16 +7,20 @@
 const STORAGE_KEY = "perbio_state";
 
 const SOCIAL_PLATFORMS = [
+  // professional first
+  { key: "linkedin",  label: "LinkedIn",  initials: "IN", color: "#0A66C2" },
+  { key: "handshake", label: "Handshake", initials: "HS", color: "#2F6F62" },
+  { key: "github",    label: "GitHub",    initials: "GH", color: "#24292F" },
+  // everything else
   { key: "facebook",  label: "Facebook",  initials: "FB", color: "#3B5998" },
   { key: "instagram", label: "Instagram", initials: "IG", color: "#C1367B" },
   { key: "tiktok",    label: "TikTok",    initials: "TT", color: "#111111" },
   { key: "snapchat",  label: "Snapchat",  initials: "SC", color: "#B8A400" },
   { key: "pinterest", label: "Pinterest", initials: "PT", color: "#C8232C" },
   { key: "youtube",   label: "YouTube",   initials: "YT", color: "#C4302B" },
-  { key: "linkedin",  label: "LinkedIn",  initials: "IN", color: "#0A66C2" },
-  { key: "handshake", label: "Handshake", initials: "HS", color: "#2F6F62" },
   { key: "x",         label: "X",         initials: "X",  color: "#111111" },
 ];
+const OTHER_SOCIAL_COLOR = "#5B6472";
 
 const MEDIA_PLATFORMS = ["YouTube", "TikTok", "Vimeo", "Published work", "Project", "Article", "Other"];
 
@@ -295,6 +299,98 @@ function dataUrlToBuffer(u) {
   return a.buffer;
 }
 
+/* ---------- About: visual timeline graph + project links ---------- */
+function ganttItems(exp, proj) {
+  const out = [];
+  (exp || []).filter((e) => e.title || e.company).forEach((e) => {
+    const s = parseDateText(e.start);
+    if (!s) return;
+    const en = parseDateText(e.end) || s;
+    const a = tlKey(s), b = Math.max(tlKey(en, true), a);
+    out.push({
+      kind: "work", a, b,
+      label: e.title || e.company, sub: e.title ? e.company : "",
+      dates: [e.start, e.end && e.end !== e.start ? e.end : ""].filter(Boolean).join(" \u2013 "),
+    });
+  });
+  (proj || []).filter((p) => p.name && p.date).forEach((p) => {
+    const d = findDate(p.date);
+    if (!d) return;
+    const s = parseDateText(d.s);
+    if (!s) return;
+    const en = parseDateText(d.e) || s;
+    const a = tlKey(s), b = Math.max(tlKey(en, true), a);
+    out.push({ kind: "proj", a, b, label: p.name, sub: "Project", dates: p.date });
+  });
+  return out.sort((x, y) => y.b - x.b || y.a - x.a);
+}
+
+function renderTimelineGraphHtml(exp, proj) {
+  const items = ganttItems(exp, proj);
+  if (!items.length) return "";
+  const minA = Math.min(...items.map((i) => i.a));
+  const maxB = Math.max(...items.map((i) => i.b));
+  const axisStart = Math.floor(minA / 12) * 12;
+  const axisEnd = (Math.floor(maxB / 12) + 1) * 12;
+  const total = axisEnd - axisStart;
+  const years = total / 12;
+  const step = years <= 6 ? 1 : Math.ceil(years / 6);
+  const pct = (k) => ((k - axisStart) / total) * 100;
+
+  let ticks = "";
+  for (let y = axisStart / 12; y < axisEnd / 12; y += step) {
+    ticks += `<span class="gx-line" style="left:${pct(y * 12).toFixed(2)}%"></span><span class="gx-tick" style="left:${pct(y * 12).toFixed(2)}%">${y}</span>`;
+  }
+  const now = new Date();
+  const nowKey = now.getFullYear() * 12 + now.getMonth() + 0.5;
+  const nowLine = nowKey > axisStart && nowKey < axisEnd
+    ? `<span class="gx-now" style="left:${pct(nowKey).toFixed(2)}%" title="Today"></span>` : "";
+
+  const hasProj = items.some((i) => i.kind === "proj");
+  const rows = items.map((i) => {
+    const left = Math.min(pct(i.a), 98.5);
+    const width = Math.max(pct(i.b + 1) - pct(i.a), 1.5);
+    const w = Math.min(width, 100 - left);
+    return `<div class="gx-row">
+      <div class="gx-label"><span class="gx-t">${escapeHtml(i.label)}</span><span class="gx-s">${escapeHtml([i.sub, i.dates].filter(Boolean).join(" \u00b7 "))}</span></div>
+      <div class="gx-track"><span class="gx-bar gx-${i.kind}" style="left:${left.toFixed(2)}%;width:${w.toFixed(2)}%" title="${escapeHtml(i.label + (i.dates ? " (" + i.dates + ")" : ""))}"></span></div>
+    </div>`;
+  }).join("");
+
+  return `<div class="ab-block">
+    <div class="ab-head"><h3 class="ab-h">Experience at a glance</h3>
+      <div class="gx-legend"><span><i class="gx-sw gx-work"></i>Work</span>${hasProj ? `<span><i class="gx-sw gx-proj"></i>Projects</span>` : ""}</div>
+    </div>
+    <div class="gx" role="img" aria-label="Chart of work experience and projects over time">
+      <div class="gx-axis">${ticks}</div>
+      <div class="gx-lines">${ticks.replace(/<span class="gx-tick"[^>]*>[^<]*<\/span>/g, "")}${nowLine}</div>
+      <div class="gx-rows">${rows}</div>
+    </div>
+  </div>`;
+}
+
+function renderProjectLinksHtml(projects, media) {
+  const seen = new Set();
+  const norm = (u) => (u || "").trim().toLowerCase().replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+  const items = [];
+  (projects || []).filter((p) => p.name).forEach((p) => {
+    if (p.link) seen.add(norm(p.link));
+    items.push({ name: p.name, link: p.link || "", note: p.tech || "" });
+  });
+  (media || []).filter((m) => m.platform === "Project" && m.url && !seen.has(norm(m.url))).forEach((m) => {
+    items.push({ name: m.title || m.url, link: m.url, note: "" });
+  });
+  if (!items.length) return "";
+  return `<div class="ab-block">
+    <h3 class="ab-h">Projects</h3>
+    <ul class="ab-links">${items.map((i) => `<li>
+      ${i.link
+        ? `<a class="ab-link-name" href="${escapeHtml(withHttp(i.link))}" target="_blank" rel="noopener">${escapeHtml(i.name)} <span aria-hidden="true">\u2197</span></a><span class="ab-url">${escapeHtml(i.link.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, ""))}</span>`
+        : `<span class="ab-link-name ab-nolink">${escapeHtml(i.name)}</span>`}
+    </li>`).join("")}</ul>
+  </div>`;
+}
+
 function renderProjectsHtml(list) {
   const items = (list || []).filter((p) => p.name);
   if (!items.length) return `<p class="pv-empty">No projects added yet.</p>`;
@@ -337,6 +433,8 @@ const SOCIAL_ICONS = {
   handshake: '<path d="M6 5v14M18 5v14M6 12h12" fill="none" stroke="currentColor" stroke-width="2.600" stroke-linecap="round"/>',
   x:         '<path d="M4.500 4.500l15 15M19.500 4.500l-15 15" fill="none" stroke="currentColor" stroke-width="2.600" stroke-linecap="round"/>',
 };
+SOCIAL_ICONS.github = '<path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.62 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z" fill="currentColor"/>';
+SOCIAL_ICONS.other = '<path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
 function socialIcon(key) {
   return `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">${SOCIAL_ICONS[key] || ""}</svg>`;
 }
@@ -572,6 +670,7 @@ function defaultState() {
       tagline: "",
       about: "",
       socials: {},
+      socialsOther: [],
       media: [],
       resume: { fileName: "", fileData: "", link: "", files: [] },
       experience: { entries: [], source: "" },
@@ -606,6 +705,7 @@ function loadState() {
         ...base.profile,
         ...(parsed.profile || {}),
         socials: { ...base.profile.socials, ...((parsed.profile || {}).socials || {}) },
+        socialsOther: Array.isArray((parsed.profile || {}).socialsOther) ? parsed.profile.socialsOther : [],
         resume: { ...base.profile.resume, ...((parsed.profile || {}).resume || {}) },
         experience: { ...base.profile.experience, ...((parsed.profile || {}).experience || {}) },
         projects: { ...base.profile.projects, ...((parsed.profile || {}).projects || {}) },
@@ -652,10 +752,9 @@ function renderPublicMarkup(state, opts = {}) {
     : initials(p.name || state.username);
 
   const socialChips = SOCIAL_PLATFORMS.filter((s) => p.socials[s.key])
-    .map((s) => {
-      const chipClass = compact ? "pv-social-chip" : "pv-social-chip";
-      return `<a class="${chipClass}" style="background:${s.color}" href="${withHttp(p.socials[s.key])}" target="_blank" rel="noopener" title="${s.label}" aria-label="${s.label}">${socialIcon(s.key)}</a>`;
-    })
+    .map((s) => `<a class="pv-social-chip" style="background:${s.color}" href="${withHttp(p.socials[s.key])}" target="_blank" rel="noopener" title="${s.label}" aria-label="${s.label}">${socialIcon(s.key)}</a>`)
+    .concat((p.socialsOther || []).filter((o) => o.url && o.url.trim())
+      .map((o) => `<a class="pv-social-chip" style="background:${OTHER_SOCIAL_COLOR}" href="${escapeHtml(withHttp(o.url))}" target="_blank" rel="noopener" title="${escapeHtml(o.label || "Link")}" aria-label="${escapeHtml(o.label || "Link")}">${socialIcon("other")}</a>`))
     .join("");
 
   const mediaHtml = p.media.length
@@ -670,17 +769,23 @@ function renderPublicMarkup(state, opts = {}) {
   const resumeFiles = getResumeFiles(p.resume);
   const resumeHtml = (resumeFiles.length || p.resume.link)
     ? `
-      ${resumeFiles.map((f) => `
-        <div class="pv-row">
-          <span>${escapeHtml(f.name)}</span>
-          <a class="btn btn-outline btn-sm" href="${f.data}" download="${escapeHtml(f.name)}">Download</a>
+      ${resumeFiles.map((f, i) => `
+        <div class="res-card" data-res="${i}">
+          <div class="res-head">
+            <span class="res-name">${escapeHtml(f.name)}</span>
+            <a class="btn btn-outline btn-sm" data-res-dl href="#" download="${escapeHtml(f.name)}">Download</a>
+          </div>
+          ${isPdfFile(f) ? `<div class="res-frame" data-res-view></div>` : `<p class="pv-empty res-note">Preview isn't available for Word files. Download it to view.</p>`}
         </div>`).join("")}
       ${p.resume.link ? `<div class="pv-row"><span class="k">Link</span><a href="${withHttp(p.resume.link)}" target="_blank" rel="noopener">${escapeHtml(p.resume.link)}</a></div>` : ""}
     `
     : `<p class="pv-empty">No files uploaded yet.</p>`;
 
-  const aboutHtml = p.about
-    ? `<p style="white-space:pre-wrap;">${escapeHtml(p.about)}</p>`
+  const aboutText = p.about ? `<p style="white-space:pre-wrap;">${escapeHtml(p.about)}</p>` : "";
+  const aboutGraph = renderTimelineGraphHtml((p.experience || {}).entries, (p.projects || {}).entries);
+  const aboutLinks = renderProjectLinksHtml((p.projects || {}).entries, p.media);
+  const aboutHtml = (aboutText || aboutGraph || aboutLinks)
+    ? aboutText + aboutGraph + aboutLinks
     : `<p class="pv-empty">Nothing written yet.</p>`;
 
   const contactHtml = (p.contact.email || p.contact.phone || p.contact.location)
@@ -714,18 +819,18 @@ function renderPublicMarkup(state, opts = {}) {
     <div class="tpl-main">
     <div class="pv-tabs" role="tablist">
       <button data-pv-tab="about" class="active">About</button>
-      <button data-pv-tab="timeline">Timeline</button>
+      <button data-pv-tab="resume">Resume</button>
+      <button data-pv-tab="timeline">Experience</button>
       <button data-pv-tab="projects">Projects</button>
       <button data-pv-tab="media">Media</button>
-      <button data-pv-tab="resume">Resume/CV</button>
       <button data-pv-tab="contact">Contact</button>
       <button data-pv-tab="booking">Booking</button>
     </div>
     <div class="pv-panel active" data-pv-panel="about">${aboutHtml}</div>
+    <div class="pv-panel" data-pv-panel="resume">${resumeHtml}</div>
     <div class="pv-panel" data-pv-panel="timeline">${timelineHtml}</div>
     <div class="pv-panel" data-pv-panel="projects">${projectsHtml}</div>
     <div class="pv-panel" data-pv-panel="media">${mediaHtml}</div>
-    <div class="pv-panel" data-pv-panel="resume">${resumeHtml}</div>
     <div class="pv-panel" data-pv-panel="contact">${contactHtml}</div>
     <div class="pv-panel" data-pv-panel="booking">${bookingHtml}</div>
     </div>
@@ -734,7 +839,34 @@ function renderPublicMarkup(state, opts = {}) {
   `;
 }
 
-function wirePublicTabs(root) {
+const blobUrlCache = new Map();
+function isPdfFile(f) { return /\.pdf$/i.test(f.name || "") || /^data:application\/pdf/i.test(f.data || ""); }
+function fileBlobUrl(f) {
+  const key = f.name + ":" + f.data.length;
+  if (!blobUrlCache.has(key)) {
+    const type = isPdfFile(f) ? "application/pdf" : ((f.data.match(/^data:([^;,]+)/) || [])[1] || "application/octet-stream");
+    blobUrlCache.set(key, URL.createObjectURL(new Blob([dataUrlToBuffer(f.data)], { type })));
+  }
+  return blobUrlCache.get(key);
+}
+// PDFs get an inline preview; every file gets a working download link. Built on demand (when the tab opens).
+function mountResumePreviews(root, state) {
+  const files = getResumeFiles(state.profile.resume);
+  root.querySelectorAll("[data-res]").forEach((card) => {
+    const f = files[+card.getAttribute("data-res")];
+    if (!f) return;
+    let url;
+    try { url = fileBlobUrl(f); } catch (e) { return; }
+    const dl = card.querySelector("[data-res-dl]");
+    if (dl) dl.href = url;
+    const box = card.querySelector("[data-res-view]");
+    if (box && !box.firstChild) {
+      box.innerHTML = `<iframe src="${url}#toolbar=0&navpanes=0&view=FitH" title="Preview of ${escapeHtml(f.name)}"></iframe>`;
+    }
+  });
+}
+
+function wirePublicTabs(root, state) {
   const tabs = root.querySelectorAll("[data-pv-tab]");
   tabs.forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -743,6 +875,7 @@ function wirePublicTabs(root) {
       root.querySelectorAll("[data-pv-panel]").forEach((p) =>
         p.classList.toggle("active", p.getAttribute("data-pv-panel") === target)
       );
+      if (target === "resume" && state) mountResumePreviews(root, state);
     });
   });
 }
@@ -927,7 +1060,7 @@ function initDashboard() {
   function refreshPreview() {
     const el = document.getElementById("previewPage");
     el.innerHTML = renderPublicMarkup(state, { compact: true });
-    wirePublicTabs(el);
+    wirePublicTabs(el, state);
     mountCalendarIfNeeded(el, state, () => { saveState(state); renderBookingsList(); });
   }
 
@@ -982,6 +1115,38 @@ function initDashboard() {
       state.profile.socials[input.getAttribute("data-social")] = input.value;
       persist();
     });
+  });
+
+  /* ---- Other links (custom socials) ---- */
+  if (!Array.isArray(state.profile.socialsOther)) state.profile.socialsOther = [];
+  const otherList = document.getElementById("otherSocialList");
+  function renderOtherSocials() {
+    const arr = state.profile.socialsOther;
+    otherList.innerHTML = arr.map((o, i) => `
+      <div class="social-row other-row" data-i="${i}">
+        <div class="social-chip" style="background:${OTHER_SOCIAL_COLOR}">${socialIcon("other")}</div>
+        <input type="text" class="other-label" data-f="label" placeholder="Label (e.g. Portfolio)" value="${escapeHtml(o.label || "")}">
+        <input type="text" data-f="url" placeholder="URL" value="${escapeHtml(o.url || "")}">
+        <button type="button" class="btn-text" data-remove>Remove</button>
+      </div>`).join("");
+    otherList.querySelectorAll(".other-row").forEach((row) => {
+      const i = +row.getAttribute("data-i");
+      row.querySelectorAll("[data-f]").forEach((f) => f.addEventListener("input", () => {
+        state.profile.socialsOther[i][f.getAttribute("data-f")] = f.value;
+        persist();
+      }));
+      row.querySelector("[data-remove]").addEventListener("click", () => {
+        state.profile.socialsOther.splice(i, 1);
+        persist();
+        renderOtherSocials();
+      });
+    });
+  }
+  renderOtherSocials();
+  document.getElementById("addOtherSocialBtn").addEventListener("click", () => {
+    state.profile.socialsOther.push({ label: "", url: "" });
+    persist();
+    renderOtherSocials();
   });
 
   /* ---- Media panel ---- */
@@ -1397,7 +1562,7 @@ function initProfile() {
   document.getElementById("publicHandle").textContent = `per.bio/${state.username || "you"}`;
   const root = document.getElementById("publicRoot");
   root.innerHTML = renderPublicMarkup(state, { compact: false });
-  wirePublicTabs(root);
+  wirePublicTabs(root, state);
   mountCalendarIfNeeded(root, state, () => saveState(state));
   const tpl = TEMPLATES.find((t) => t.id === state.profile.template) || TEMPLATES[0];
   document.body.style.background = tpl.bg;
