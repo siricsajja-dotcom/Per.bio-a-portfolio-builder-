@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>per.bio — a portfolio builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  body.discover{ background: var(--ink); color: var(--paper); overflow-x:hidden; }
+  body.intro-active{ overflow:hidden; }
+
+  /* ---------- intro: words flash across the screen ---------- */
+  .intro{
+    position:fixed; inset:0; z-index:10; background: var(--ink);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .intro.invert{ background: var(--brass); }
+  .intro.invert .flash{ color: var(--ink); }
+  .intro.hidden{ display:none; }
+  .stage{ width:100%; text-align:center; padding: 0 4vw; }
+  .flash{
+    font-family: var(--serif); font-weight:600; color: var(--paper);
+    line-height:.9; letter-spacing:-0.035em; white-space:nowrap;
+    animation: flashIn 480ms cubic-bezier(.2,.8,.2,1) both;
+  }
+  .flash.big{ font-size: clamp(90px, 30vw, 380px); }
+  .flash.mid{ font-size: clamp(56px, 15vw, 230px); font-style: italic; font-weight:500; }
+  .flash.accent{ color: var(--brass); }
+  .flash.final{ animation-name: slamIn; animation-fill-mode: both; }
+  .flash.final span{ color: var(--brass); }
+  @keyframes flashIn{
+    0%   { opacity:0; transform: scale(1.7); filter: blur(18px); letter-spacing: .12em; }
+    22%  { opacity:1; transform: scale(1);   filter: blur(0);    letter-spacing: -0.035em; }
+    82%  { opacity:1; transform: scale(1.03); }
+    100% { opacity:0; transform: scale(.96); }
+  }
+  @keyframes slamIn{
+    0%   { opacity:0; transform: scale(2.2); filter: blur(20px); }
+    30%  { opacity:1; transform: scale(1);   filter: blur(0); }
+    100% { opacity:1; transform: scale(1.06); }
+  }
+  .skip-hint{
+    position:fixed; bottom: 26px; left:0; right:0; text-align:center;
+    font-size: 12.5px; letter-spacing:.04em; color: rgba(247,245,241,.4); pointer-events:none;
+  }
+  .intro.invert .skip-hint{ color: rgba(27,36,48,.5); }
+
+  .wipe{
+    position:fixed; inset:0; z-index:20; background: var(--brass);
+    transform: translateX(-101%); pointer-events:none;
+  }
+  .wipe.run{ animation: wipe 950ms cubic-bezier(.7,0,.3,1) forwards; }
+  @keyframes wipe{
+    0%   { transform: translateX(-101%); }
+    50%  { transform: translateX(0); }
+    100% { transform: translateX(101%); }
+  }
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative; min-height:100vh; overflow:hidden;
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    padding: 40px 6vw;
+  }
+  .hero::after{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background: radial-gradient(ellipse at center, rgba(27,36,48,.88) 22%, rgba(27,36,48,0) 70%);
+  }
+  .marquee{
+    position:absolute; left:0; width:100%; white-space:nowrap; overflow:hidden;
+    font-family: var(--serif); font-weight:600; line-height:1;
+    font-size: clamp(64px, 13vw, 200px); letter-spacing:-0.03em;
+    color: transparent; -webkit-text-stroke: 1px rgba(247,245,241,.2);
+    user-select:none; pointer-events:none;
+  }
+  .marquee .track{ display:inline-block; animation: slide 38s linear infinite; }
+  .marquee.m1{ top: 6%; }
+  .marquee.m2{ top: 34%; color: rgba(201,154,59,.14); -webkit-text-stroke: 0; }
+  .marquee.m2 .track{ animation-direction: reverse; animation-duration: 46s; }
+  .marquee.m3{ top: 62%; }
+  .marquee.m3 .track{ animation-duration: 30s; }
+  @keyframes slide{ from{ transform: translateX(0); } to{ transform: translateX(-50%); } }
+
+  .hero-inner{ position:relative; z-index:2; max-width: 900px; }
+  .hero-title{
+    font-family: var(--serif); font-weight:600; margin:0;
+    font-size: clamp(72px, 17vw, 240px); line-height:.9; letter-spacing:-0.04em;
+  }
+  .hero-title .ch{ display:inline-block; }
+  .hero-title .dot{ color: var(--brass); }
+  .hero-sub{
+    font-family: var(--serif); font-style: italic; font-weight:500;
+    font-size: clamp(20px, 3.2vw, 34px); margin: 22px 0 6px; color: var(--paper);
+  }
+  .hero-note{ color: rgba(247,245,241,.6); font-size: 15.5px; margin: 0 0 34px; }
+  .hero-actions{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .hero-actions .btn{ padding: 14px 26px; font-size: 15px; }
+
+  .rise{ opacity:0; transform: translateY(26px); }
+  .hero.show .rise{ animation: rise .85s cubic-bezier(.2,.7,.2,1) forwards; animation-delay: var(--d, 0s); }
+  @keyframes rise{ to{ opacity:1; transform:none; } }
+
+  .topnav{
+    position:absolute; top:0; left:0; right:0; z-index:3;
+    display:flex; justify-content:space-between; align-items:center; padding: 26px 5vw;
+  }
+  .topnav .wm{ font-family: var(--serif); font-size:18px; font-weight:600; text-decoration:none; }
+  .topnav .wm span{ color: var(--brass); }
+  .topnav a.nav-link{ color: rgba(247,245,241,.7); font-size:14px; text-decoration:none; }
+  .topnav a.nav-link:hover{ color: var(--paper); }
+
+  /* ---------- features ---------- */
+  .features{ padding: 110px 6vw 60px; border-top: 1px solid rgba(247,245,241,.12); }
+  .features h2{ font-size: clamp(32px, 5vw, 56px); margin: 0 0 44px; max-width: 700px; line-height:1.05; }
+  .features h2 em{ color: var(--brass); font-weight:500; }
+  .feat{
+    display:flex; align-items:baseline; justify-content:space-between; gap:24px;
+    padding: 22px 0; border-bottom: 1px solid rgba(247,245,241,.14);
+    transition: padding-left .25s ease, color .25s ease;
+  }
+  .feat:hover{ padding-left: 18px; color: var(--brass); }
+  .feat .name{ font-family: var(--serif); font-weight:600; font-size: clamp(30px, 5.5vw, 68px); letter-spacing:-0.02em; }
+  .feat .what{ font-size: 14.5px; color: rgba(247,245,241,.55); text-align:right; }
+  .cta-band{ text-align:center; padding: 90px 6vw 110px; }
+  .cta-band h3{ font-size: clamp(28px, 4.5vw, 52px); margin: 0 0 26px; }
+  .cta-band .btn{ padding: 14px 28px; font-size:15px; }
+
+  @media (prefers-reduced-motion: reduce){
+    .marquee .track{ animation:none; }
+    .rise{ opacity:1; transform:none; }
+  }
+</style>
+</head>
+<body class="discover intro-active">
+
+  <!-- decorative intro; skippable with a click or any key -->
+  <div class="intro" id="intro" aria-hidden="true">
+    <div class="stage" id="stage"></div>
+    <div class="skip-hint">click or press any key to skip</div>
+  </div>
+  <div class="wipe" id="wipe" aria-hidden="true"></div>
+
+  <section class="hero" id="hero">
+    <div class="topnav rise" style="--d:.9s">
+      <a class="wm" href="discover.html">per<span>.</span>bio</a>
+      <a class="nav-link" href="index.html">Create your page</a>
+    </div>
+
+    <div class="marquee m1" aria-hidden="true"><div class="track" data-marquee></div></div>
+    <div class="marquee m2" aria-hidden="true"><div class="track" data-marquee></div></div>
+    <div class="marquee m3" aria-hidden="true"><div class="track" data-marquee></div></div>
+
+    <div class="hero-inner">
+      <h1 class="hero-title" aria-label="per.bio">
+        <span class="ch rise" style="--d:.05s">p</span><span class="ch rise" style="--d:.11s">e</span><span class="ch rise" style="--d:.17s">r</span><span class="ch dot rise" style="--d:.23s">.</span><span class="ch rise" style="--d:.29s">b</span><span class="ch rise" style="--d:.35s">i</span><span class="ch rise" style="--d:.41s">o</span>
+      </h1>
+      <p class="hero-sub rise" style="--d:.6s">a portfolio builder</p>
+      <p class="hero-note rise" style="--d:.72s">One link that shows recruiters and admissions officers the best of you.</p>
+      <div class="hero-actions rise" style="--d:.85s">
+        <a class="btn btn-primary" href="index.html">Create your page</a>
+        <button type="button" class="btn btn-ghost" id="replay">Replay intro</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="features">
+    <h2 class="serif">Everything you want them to see, <em>in one link.</em></h2>
+    <div class="feat"><span class="name">Socials</span><span class="what">Nine platforms, one clean row</span></div>
+    <div class="feat"><span class="name">Media</span><span class="what">YouTube, TikTok, Vimeo</span></div>
+    <div class="feat"><span class="name">Resume / CV</span><span class="what">Upload it or link to it</span></div>
+    <div class="feat"><span class="name">About Me</span><span class="what">Your story, your words</span></div>
+    <div class="feat"><span class="name">Contact</span><span class="what">Email, phone, location</span></div>
+    <div class="feat"><span class="name">Booking</span><span class="what">A calendar people can book</span></div>
+    <div class="feat"><span class="name">Templates</span><span class="what">Five looks, your accent color</span></div>
+  </section>
+
+  <section class="cta-band">
+    <h3 class="serif">Claim your page.</h3>
+    <a class="btn btn-primary" href="index.html">Get started</a>
+  </section>
+
+<script>
+(function () {
+  var intro = document.getElementById("intro");
+  var stage = document.getElementById("stage");
+  var wipe = document.getElementById("wipe");
+  var hero = document.getElementById("hero");
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // fill the scrolling background text
+  var phrase = "PER.BIO \u2014 A PORTFOLIO BUILDER \u2014 ";
+  document.querySelectorAll("[data-marquee]").forEach(function (el) {
+    var half = phrase.repeat(6);
+    el.textContent = half + half;
+  });
+
+  // the flash sequence: text, style, how long it stays
+  var words = [
+    { t: "PER",         cls: "big",          ms: 480 },
+    { t: ".bio",        cls: "big accent",   ms: 480 },
+    { t: "a portfolio", cls: "mid", invert: true, ms: 560 },
+    { t: "builder",     cls: "mid",          ms: 520 },
+    { t: "PER.bio",     cls: "big final",    ms: 1000, final: true }
+  ];
+
+  var timers = [];
+  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+
+  function reveal() {
+    intro.classList.add("hidden");
+    document.body.classList.remove("intro-active");
+    hero.classList.add("show");
+  }
+
+  function play() {
+    clearTimers();
+    hero.classList.remove("show");
+    intro.classList.remove("hidden", "invert");
+    document.body.classList.add("intro-active");
+    window.scrollTo(0, 0);
+    if (reduce) { reveal(); return; }
+
+    var t = 250;
+    words.forEach(function (w) {
+      later(function () {
+        stage.innerHTML = "";
+        var el = document.createElement("div");
+        el.className = "flash " + w.cls;
+        el.style.animationDuration = w.ms + "ms";
+        if (w.final) {
+          el.innerHTML = 'PER<span>.</span>bio';
+        } else {
+          el.textContent = w.t;
+        }
+        stage.appendChild(el);
+        intro.classList.toggle("invert", !!w.invert);
+      }, t);
+      t += w.ms;
+    });
+
+    later(function () { wipe.classList.remove("run"); void wipe.offsetWidth; wipe.classList.add("run"); }, t);
+    later(reveal, t + 480);
+    later(function () { wipe.classList.remove("run"); }, t + 1100);
+  }
+
+  function skip() {
+    if (intro.classList.contains("hidden")) return;
+    clearTimers();
+    wipe.classList.remove("run");
+    reveal();
+  }
+
+  intro.addEventListener("click", skip);
+  document.addEventListener("keydown", skip);
+  document.getElementById("replay").addEventListener("click", play);
+
+  play();
+})();
+</script>
+</body>
+</html>
